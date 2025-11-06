@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>AI Content Blaster ⚡</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap');
+    body{font-family:'Inter',sans-serif;background:#0d1117;color:#c9d1d9;margin:0;padding:20px}
+    .card{max-width:700px;margin:20px auto;background:#161b22;padding:24px;border-radius:16px;box-shadow:0 8px 32px rgba(0,0,0,.4);border:1px solid #30363d}
+    h1{text-align:center;color:#58a6ff;margin:0 0 8px}
+    textarea,select{width:100%;padding:12px;border-radius:8px;border:1px solid #30363d;background:#0d1117;color:white;font-size:16px;margin:12px 0}
+    button{background:#238636;padding:14px 24px;border:none;border-radius:8px;color:white;font-weight:bold;cursor:pointer;width:100%;font-size:18px;margin-top:12px}
+    button:hover{background:#2ea043}
+    .output{margin-top:20px;padding:16px;background:#010409;border:1px solid #30363d;border-radius:8px;white-space:pre-wrap;display:none}
+    .copy{float:right;background:#30363d;padding:4px 8px;border-radius:6px;font-size:12px;cursor:pointer}
+    .loading{color:#58a6ff;text-align:center;margin:20px}
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>⚡ AI Content Blaster</h1>
+    <p style="text-align:center;color:#8b949e">Titles • Descriptions • Hashtags • TikTok Hooks for eBay, TikTok, Whatnot, FB</p>
+
+    <label>🔌 Paste your Grok API key (one time)</label>
+    <input type="password" id="apiKey" placeholder="xai-XXXXXXXXXXXXXXXXXXXX" />
+
+    <label>📦 What are you selling? (be specific)</label>
+    <textarea id="product" rows="3" placeholder="Example: Vintage 90s Pokémon Charizard hoodie, size M, perfect condition"></textarea>
+
+    <label>🎯 Platform</label>
+    <select id="platform">
+      <option value="ebay">eBay</option>
+      <option value="tiktok">TikTok Shop</option>
+      <option value="whatnot">Whatnot Live</option>
+      <option value="facebook">Facebook Marketplace</option>
+    </select>
+
+    <button onclick="generate()">🚀 Generate Everything</button>
+
+    <div id="loading" class="loading" style="display:none">Cooking magic…</div>
+    <div id="output" class="output">
+      <span class="copy" onclick="copyAll()">📋 Copy All</span>
+      <div id="result"></div>
+    </div>
+  </div>
+
+  <script>
+    async function generate() {
+      const key = document.getElementById('apiKey').value.trim();
+      if (!key) return alert("⚠️ Paste your Grok API key first!");
+      localStorage.setItem('grokKey', key);
+
+      const product = document.getElementById('product').value;
+      const platform = document.getElementById('platform').value;
+      if (!product) return alert("Describe your item!");
+
+      document.getElementById('loading').style.display = 'block';
+      document.getElementById('output').style.display = 'none';
+
+      const prompt = `You are a viral e-commerce copywriter. 
+Product: ${product}
+Platform: ${platform}
+Output ONLY this JSON (no extra text):
+{
+  "title": "60-char max, emoji, power words",
+  "hook": "First 3 sec TikTok/Whatnot hook line",
+  "description": "3 bullet points + 1 urgency line",
+  "hashtags": "12 trending hashtags",
+  "price_tip": "suggested price or bidding start"
+}`;
+
+      try {
+        const res = await fetch('https://api.x.ai/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${key}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            model: 'grok-4',
+            messages: [{role: 'user', content: prompt}],
+            temperature: 0.8,
+            max_tokens: 500
+          })
+        });
+
+        const data = await res.json();
+        const json = JSON.parse(data.choices[0].message.content);
+
+        document.getElementById('result').innerHTML = `
+<strong>📢 Title</strong><br>${json.title}<br><br>
+<strong>🎥 Hook</strong><br>${json.hook}<br><br>
+<strong>📝 Description</strong><br>${json.description.replace(/\\n/g, '<br>')}<br><br>
+<strong>🏷️ Hashtags</strong><br>${json.hashtags}<br><br>
+<strong>💰 Price tip</strong><br>${json.price_tip}<br>`;
+
+        document.getElementById('output').style.display = 'block';
+      } catch (e) {
+        alert('API error – check your key or internet');
+        console.error(e);
+      } finally {
+        document.getElementById('loading').style.display = 'none';
+      }
+    }
+
+    function copyAll() {
+      const text = document.getElementById('result').innerText;
+      navigator.clipboard.writeText(text);
+      alert('Copied to clipboard!');
+    }
+
+    // Auto-load saved key
+    const saved = localStorage.getItem('grokKey');
+    if (saved) document.getElementById('apiKey').value = saved;
+  </script>
+</body>
+</html>
